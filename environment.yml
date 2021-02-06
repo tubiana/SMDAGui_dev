@@ -1,0 +1,12 @@
+name: smda
+channels:
+- defaults
+- conda-forge
+dependencies:
+- matplotlib
+- numpy
+- pandas
+- scipy >= 0.18
+- mdtraj >= 1.9.5
+- numba
+- pyqt

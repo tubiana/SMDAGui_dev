@@ -45,12 +45,13 @@ class RMSF(Analyses):
 
         referenceFrame = self.parameters["frame"]
 
-        if hasattr(md,"rmsd"):
-            print("> using MDTRAJ RMSF FUNCTION")
-            rmsf = md.rmsf(subtraj,subtraj, self.spinBoxRefFrame.value(), precentered=True)
-        else:
-            average_coords = np.mean(subtraj.xyz, axis=0)
-            rmsf = np.sqrt(3 * np.mean((subtraj.xyz[:, :, :] - average_coords) ** 2, axis=(0, 2)))
+        #if hasattr(md,"rmsf"):
+        #    print("> using MDTRAJ RMSF FUNCTION")
+        #    rmsf = md.rmsf(subtraj,subtraj, self.spinBoxRefFrame.value(), precentered=True)
+        #else:
+        #Calculating homemade RMSF to avoid, alignment issue.
+        average_coords = np.mean(subtraj.xyz, axis=0)
+        rmsf = np.sqrt(3 * np.mean((subtraj.xyz[:, :, :] - average_coords) ** 2, axis=(0, 2)))
 
 
         if self.checkBoxByResidue.isChecked():

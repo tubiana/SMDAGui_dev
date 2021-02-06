@@ -1,4 +1,22 @@
 from .base import *
+from numba import jit, prange
+
+
+@jit(nopython=True, parallel=False, cache=True, nogil=True)
+def calc_rmsd_2frames(ref, frame):
+    """
+    THIS FUNCTION IS OUT OF THE CLASS BECAUSE OF NUMBA
+    RMSD calculation between a reference and a frame.
+    This function is "jitted" for better performances
+    """
+    dist = np.zeros(len(frame))
+    for atom in range(len(frame)):
+        dist[atom] = ((ref[atom][0] - frame[atom][0]) ** 2 +
+                      (ref[atom][1] - frame[atom][1]) ** 2 +
+                      (ref[atom][2] - frame[atom][2]) ** 2)
+
+    return (np.sqrt(dist.mean()))
+
 
 
 class RMSD(Analyses):
@@ -30,6 +48,8 @@ class RMSD(Analyses):
         self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
         self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
 
+
+
     def do_calculations(self, traj):
         """
         Main calculation function. It has to return a dataframe object with the results
@@ -40,11 +60,15 @@ class RMSD(Analyses):
             rmsdDF (pandas.DataFrame):  DataFrame with all the results
         """
 
-        rmsd = md.rmsd(target=traj,
-                       reference=traj,
-                       frame=self.parameters["frame"],
-                       atom_indices=self.improvedSelection(traj, self.parameters["selection"]),
-                       precentered=self.parameters["precentered"])
+
+        atomsel = traj.top.select(self.parameters["selection"])
+        referenceFrame = self.parameters["frame"]
+        subtraj = traj.atom_slice(atomsel, inplace=False)
+
+        rmsd = np.zeros(subtraj.n_frames)
+        for i in range(subtraj.n_frames):
+            rmsd[i] = calc_rmsd_2frames(subtraj.xyz[referenceFrame], subtraj.xyz[i])
+
 
         rmsdDF = pd.DataFrame({self.yAxisLabel: rmsd * 10,
                                self.xAxisLabel: traj.time / 1000})
