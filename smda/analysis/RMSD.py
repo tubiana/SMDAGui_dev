@@ -1,8 +1,7 @@
 from .base import *
 from numba import jit, prange
 
-
-@jit(nopython=True, parallel=False, cache=True, nogil=True)
+@jit(nopython=True, parallel=False, cache=False, nogil=True)
 def calc_rmsd_2frames(ref, frame):
     """
     THIS FUNCTION IS OUT OF THE CLASS BECAUSE OF NUMBA
@@ -10,6 +9,9 @@ def calc_rmsd_2frames(ref, frame):
     This function is "jitted" for better performances
     """
     dist = np.zeros(len(frame))
+    
+    #dist = (ref - frame)**2 
+    #Loop seems faster with numba
     for atom in range(len(frame)):
         dist[atom] = ((ref[atom][0] - frame[atom][0]) ** 2 +
                       (ref[atom][1] - frame[atom][1]) ** 2 +
@@ -18,8 +20,9 @@ def calc_rmsd_2frames(ref, frame):
     return (np.sqrt(dist.mean()))
 
 
-
 class RMSD(Analyses):
+
+
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
         """
         Initialise the current analysis class.
@@ -65,10 +68,15 @@ class RMSD(Analyses):
         referenceFrame = self.parameters["frame"]
         subtraj = traj.atom_slice(atomsel, inplace=False)
 
+        import time
+        a = time.time()
+
         rmsd = np.zeros(subtraj.n_frames)
         for i in range(subtraj.n_frames):
             rmsd[i] = calc_rmsd_2frames(subtraj.xyz[referenceFrame], subtraj.xyz[i])
 
+        b = time.time()
+        print(b-a)
 
         rmsdDF = pd.DataFrame({self.yAxisLabel: rmsd * 10,
                                self.xAxisLabel: traj.time / 1000})

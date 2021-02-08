@@ -24,13 +24,13 @@ ONTESTING = False
 
 #SMDA IMPORTS
 from .design import Ui_Design
-import analysis as anlz
 
+try:
+    from .. import analysis as anlz
+except:
+    import analysis as anlz
 
 class MainWindow(QMainWindow, Ui_Design):
-
-
-
     def __init__(self, parent=None):
 
         super(MainWindow,self).__init__(parent)
