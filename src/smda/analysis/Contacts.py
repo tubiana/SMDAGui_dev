@@ -1,4 +1,5 @@
-from .base import *
+from .base import Analyses
+
 
 class Contacts(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):

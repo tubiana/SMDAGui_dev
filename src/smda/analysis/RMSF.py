@@ -1,4 +1,9 @@
-from .base import *
+import numpy as np
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+
+from .base import Analyses
+
 
 class RMSF(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
@@ -17,15 +22,19 @@ class RMSF(Analyses):
         self.widget = None
         self.init_widget()
         self.arguments = ["name", "selection", "alignement"]
-        #self.fig = None
-        #self.ax = None
+        # self.fig = None
+        # self.ax = None
         self.yAxisLabel = "RMSF (A)"
         self.xAxisLabel = "Residue"
         self.lineColor = "blue"
 
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
-        self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
+        self.lineEditSelection.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection)
+        )
+        self.pushButtonShowAtoms.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection)
+        )
 
     def do_calculations(self, traj):
         """
@@ -43,16 +52,18 @@ class RMSF(Analyses):
         if self.checkBoxAlignement.isChecked():
             subtraj.superpose(subtraj)
 
-        referenceFrame = self.parameters["frame"]
+        # TODO: referenceFrame not used for the moment
+        # referenceFrame = self.parameters["frame"]
 
-        #if hasattr(md,"rmsf"):
+        # if hasattr(md,"rmsf"):
         #    print("> using MDTRAJ RMSF FUNCTION")
         #    rmsf = md.rmsf(subtraj,subtraj, self.spinBoxRefFrame.value(), precentered=True)
-        #else:
-        #Calculating homemade RMSF to avoid, alignment issue.
+        # else:
+        # Calculating homemade RMSF to avoid, alignment issue.
         average_coords = np.mean(subtraj.xyz, axis=0)
-        rmsf = np.sqrt(3 * np.mean((subtraj.xyz[:, :, :] - average_coords) ** 2, axis=(0, 2)))
-
+        rmsf = np.sqrt(
+            3 * np.mean((subtraj.xyz[:, :, :] - average_coords) ** 2, axis=(0, 2))
+        )
 
         if self.checkBoxByResidue.isChecked():
             table, bonds = subtraj.top.to_dataframe()
@@ -60,11 +71,16 @@ class RMSF(Analyses):
             table["RMSF"] = rmsf
             rmsfByRes = table.groupby("resSeq").apply(lambda x: x["RMSF"].mean())
 
-            rmsfDF = pd.DataFrame({self.xAxisLabel: list(rmsfByRes.index),
-                                   self.yAxisLabel: rmsfByRes.values})
+            rmsfDF = pd.DataFrame(
+                {
+                    self.xAxisLabel: list(rmsfByRes.index),
+                    self.yAxisLabel: rmsfByRes.values,
+                }
+            )
         else:
-            rmsfDF = pd.DataFrame({self.xAxisLabel: selected_atoms,
-                                   self.yAxisLabel: rmsf})
+            rmsfDF = pd.DataFrame(
+                {self.xAxisLabel: selected_atoms, self.yAxisLabel: rmsf}
+            )
 
         # rmsfDF["Average"] = scipy.signal.savgol_filter(rmsf[self.yAxisLabel], 2, 3)
         return rmsfDF
@@ -89,7 +105,6 @@ class RMSF(Analyses):
         self.parameters["byResidue"] = self.checkBoxByResidue.isChecked()
         self.parameters["frame"] = self.spinBoxRefFrame.value()
 
-
     def loadFromDict(self, dictionnary):
         """
         Load all parameters from dict and then inject them inside PyQt widgets.
@@ -108,7 +123,6 @@ class RMSF(Analyses):
 
         self.restore_graphs()
 
-
     def init_widget(self):
         """
         Initialise all PyQt widgets
@@ -119,7 +133,9 @@ class RMSF(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -191,19 +207,21 @@ class RMSF(Analyses):
         self.gridLayout.addLayout(self.Hlayout2, 2, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout3, 3, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout4, 4, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">RMSF</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Compute RMSF of all conformations in target to a reference conformation. Note, this will center the conformations in place.</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for RMSD calculation</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Alignement</span> : Perform alignement on selection before RMSF calculation</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Group by residue</span> : instead of showing RMSF for each atoms, calculate the average RMSF for each residues</p></body></html>\n"
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">RMSF</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Compute RMSF of all conformations in target to a reference conformation. Note, this will center the conformations in place.</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for RMSD calculation</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Alignement</span> : Perform alignement on selection before RMSF calculation</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Group by residue</span> : instead of showing RMSF for each atoms, calculate the average RMSF for each residues</p></body></html>\n'
         )

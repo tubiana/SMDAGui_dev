@@ -1,4 +1,7 @@
-from .base import *
+import PyQt5.QtWidgets as QtWidgets
+
+from .base import Analyses
+
 
 class IAC(Analyses):
     """
@@ -16,7 +19,9 @@ class IAC(Analyses):
             numReplica (in): Replica number if we have several replicas.
         """
 
-        super().__init__("Imaging, Alignement, Centering", parent, mainWindows, numReplica)
+        super().__init__(
+            "Imaging, Alignement, Centering", parent, mainWindows, numReplica
+        )
 
         self.atomSelection = ""
         self.widget = None
@@ -27,12 +32,18 @@ class IAC(Analyses):
         # self.ax = None
 
         self.lineEditSelectionAlignement.textChanged.connect(
-            lambda: self.check_selection(self.lineEditSelectionAlignement))
+            lambda: self.check_selection(self.lineEditSelectionAlignement)
+        )
         self.pushButtonShowAtomsAlignement.clicked.connect(
-            lambda: self.show_DataFrame(self.lineEditSelectionAlignement))
+            lambda: self.show_DataFrame(self.lineEditSelectionAlignement)
+        )
 
-        self.checkBoxAlignement.toggled['bool'].connect(self.lineEditSelectionAlignement.setEnabled)
-        self.checkBoxAlignement.toggled['bool'].connect(self.pushButtonShowAtomsAlignement.setEnabled)
+        self.checkBoxAlignement.toggled["bool"].connect(
+            self.lineEditSelectionAlignement.setEnabled
+        )
+        self.checkBoxAlignement.toggled["bool"].connect(
+            self.pushButtonShowAtomsAlignement.setEnabled
+        )
 
     def show_graph(self, parent, replica=None):
         """
@@ -58,7 +69,9 @@ class IAC(Analyses):
             traj (mdtraj.trajectory):  trajectory object
         """
 
-        self.mainWindows.statusbar.showMessage("Imagine, Aligning and centering trajectory")
+        self.mainWindows.statusbar.showMessage(
+            "Imagine, Aligning and centering trajectory"
+        )
         # 1 Get parameters
         self.retrieve_parameters()
 
@@ -66,7 +79,9 @@ class IAC(Analyses):
             traj.image_molecules(inplace=True)
 
         if self.checkBoxAlignement.isChecked():
-            selectedAtoms = self.improvedSelection(traj, self.lineEditSelectionAlignement.text())
+            selectedAtoms = self.improvedSelection(
+                traj, self.lineEditSelectionAlignement.text()
+            )
             traj.superpose(traj, 0, selectedAtoms)
 
         if self.checkBoxCentering.isChecked():
@@ -86,7 +101,9 @@ class IAC(Analyses):
         self.checkBoxImaging.setChecked(self.parameters["checkBoxImaging"])
         self.checkBoxAlignement.setChecked(self.parameters["checkBoxAlignement"])
         self.checkBoxCentering.setChecked(self.parameters["checkBoxCentering"])
-        self.lineEditSelectionAlignement.setText(self.parameters["lineEditSelectionAlignement"])
+        self.lineEditSelectionAlignement.setText(
+            self.parameters["lineEditSelectionAlignement"]
+        )
 
     def retrieve_parameters(self, replica=None):
         """
@@ -99,7 +116,9 @@ class IAC(Analyses):
 
         self.parameters["checkBoxImaging"] = self.checkBoxImaging.isChecked()
         self.parameters["checkBoxAlignement"] = self.checkBoxAlignement.isChecked()
-        self.parameters["lineEditSelectionAlignement"] = self.lineEditSelectionAlignement.text()
+        self.parameters[
+            "lineEditSelectionAlignement"
+        ] = self.lineEditSelectionAlignement.text()
         self.parameters["checkBoxCentering"] = self.checkBoxCentering.isChecked()
 
     def init_widget(self):
@@ -113,7 +132,9 @@ class IAC(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -130,7 +151,9 @@ class IAC(Analyses):
         self.lineEditSelectionAlignement.setText("protein")
         self.pushButtonShowAtomsAlignement = QtWidgets.QPushButton(self.widget)
         self.pushButtonShowAtomsAlignement.setText("showSelectedAtoms")
-        self.pushButtonShowAtomsAlignement.setObjectName("pushButtonShowAtomsAlignement")
+        self.pushButtonShowAtomsAlignement.setObjectName(
+            "pushButtonShowAtomsAlignement"
+        )
 
         self.checkBoxImaging = QtWidgets.QCheckBox(self.widget)
         self.checkBoxImaging.setText("Imaging Trajectory ?")
@@ -173,15 +196,18 @@ class IAC(Analyses):
         self.gridLayout.addLayout(self.Hlayout3, 3, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout4, 4, 0, 1, 1)
 
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">I.A.C - Imaging, Align and Center</span></p>\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">I.A.C - Imaging, Align and Center</span></p>\n'
             "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">remove molecular 'breaks' caused by periodic conditions, align the system on a selection and center to the origin the system.</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for Centering/Alignement.</p>\n"
-            "</body></html>")
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for Centering/Alignement.</p>\n'
+            "</body></html>"
+        )

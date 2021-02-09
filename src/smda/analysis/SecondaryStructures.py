@@ -1,4 +1,9 @@
-from .base import *
+import mdtraj as md
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+
+from .base import Analyses
+
 
 class SecondaryStructures(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
@@ -22,8 +27,12 @@ class SecondaryStructures(Analyses):
         # self.fig = None
         # self.ax = None
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
-        self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
+        self.lineEditSelection.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection)
+        )
+        self.pushButtonShowAtoms.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection)
+        )
 
     def generate_graphs(self, resultsDF, replica):
         """
@@ -35,10 +44,11 @@ class SecondaryStructures(Analyses):
             resultsDF (pandas.DataFrame): Dataframe with all the results
             replica (int): replica number
         """
-        ax, fig = self.graph_SS(resultsDF,
-                                self.parameters["name"],
-                                self.parameters["imgPath"][replica],
-                                )
+        ax, fig = self.graph_SS(
+            resultsDF,
+            self.parameters["name"],
+            self.parameters["imgPath"][replica],
+        )
 
         self.figures.append([self.store_figure(ax=ax, fig=fig)])
 
@@ -102,7 +112,9 @@ class SecondaryStructures(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -155,18 +167,21 @@ class SecondaryStructures(Analyses):
         self.gridLayout.addLayout(self.Hlayout1, 1, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout2, 2, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout3, 3, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">Secondary Structure Consevation</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Compute secondary structure through the trajectory</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for atom group</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Simplified</span> : Use a simplified version of secondary structure (only Helix, Sheet or Coil)</p>\n"
-            "</body></html>\n")
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">Secondary Structure Consevation</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Compute secondary structure through the trajectory</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for atom group</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Simplified</span> : Use a simplified version of secondary structure (only Helix, Sheet or Coil)</p>\n'
+            "</body></html>\n"
+        )

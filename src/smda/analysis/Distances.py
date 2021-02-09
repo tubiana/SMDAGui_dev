@@ -1,7 +1,13 @@
-from .base import *
+import mdtraj as md
+import numpy as np
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+import scipy.signal
 
-class Angles(Analyses):
-    # TODO checking that selection return only 1 atom
+from .base import Analyses
+
+
+class Distances(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
         """
         Initialise the current analysis class.
@@ -12,51 +18,61 @@ class Angles(Analyses):
             mainWindows (core.MainWindow): Current main windows object, that contain needed functions for visualization
             numReplica (in): Replica number if we have several replicas.
         """
-        super().__init__("Angle", parent, mainWindows, numReplica)
+
+        super().__init__("Distance", parent, mainWindows, numReplica)
         self.widget = None
         self.init_widget()
 
-        self.arguments = ["name", "selection1", "selection2", "selection3"]
+        self.arguments = ["name", "selection1", "selection2"]
 
-        self.yAxisLabel = "Angle (°)"
+        self.yAxisLabel = "Distance (A)"
         self.xAxisLabel = "Time (ns)"
-        self.lineColor = "orange"
+        self.lineColor = "green"
 
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection1.textChanged.connect(lambda: self.check_selection(self.lineEditSelection1))
-        self.lineEditSelection2.textChanged.connect(lambda: self.check_selection(self.lineEditSelection2))
-        self.lineEditSelection3.textChanged.connect(lambda: self.check_selection(self.lineEditSelection3))
-        self.pushButtonShowAtoms1.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection1))
-        self.pushButtonShowAtoms2.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection2))
-        self.pushButtonShowAtoms3.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection3))
+        self.lineEditSelection1.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection1)
+        )
+        self.lineEditSelection2.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection2)
+        )
+        self.pushButtonShowAtoms1.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection1)
+        )
+        self.pushButtonShowAtoms2.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection2)
+        )
 
     def do_calculations(self, traj):
         """
         Main calculation function. It has to return a dataframe object with the results
+        Note:
+            There's no way to calculate the distance between two center of masses in MDtraj
+            So we will calculate each COM coordinates (for Selection1 AND selection2) for each frames
+            and calculate the distance between theses two COM
         Args:
             traj (mdtraj.trajectory):  trajectory object
 
         Returns:
-            outAnglesDF (pandas.DataFrame):  DataFrame with all the results
+            rmsdDF (pandas.DataFrame):  DataFrame with all the results
         """
-        at1 = self.improvedSelection(traj, self.lineEditSelection1.text())
-        at2 = self.improvedSelection(traj, self.lineEditSelection2.text())
-        at3 = self.improvedSelection(traj, self.lineEditSelection3.text())
 
-        if len(at1) != 1 or len(at2) != 1 or len(at3) != 1:
-            return False
+        com1 = md.compute_center_of_mass(
+            traj.atom_slice(self.improvedSelection(traj, self.parameters["selection1"]))
+        )
+        com2 = md.compute_center_of_mass(
+            traj.atom_slice(self.improvedSelection(traj, self.parameters["selection2"]))
+        )
+        distance = np.sqrt(np.sum((com1 - com2) ** 2, axis=1))
 
-        indices = np.array([[at1[0], at2[0], at3[0]]])
-        angles = md.compute_angles(traj, indices)
-        degrees = np.asarray(angles).flatten() * 180 / np.pi
-        outAngles = degrees % 360
+        distanceDF = pd.DataFrame(
+            {self.yAxisLabel: distance * 10, self.xAxisLabel: traj.time / 1000}
+        )
+        distanceDF["Average"] = scipy.signal.savgol_filter(
+            distanceDF[self.yAxisLabel], 21, 3
+        )
 
-        outAnglesDF = pd.DataFrame({self.yAxisLabel: outAngles,
-                                    self.xAxisLabel: traj.time / 1000})
-
-        outAnglesDF["Average"] = scipy.signal.savgol_filter(outAnglesDF[self.yAxisLabel], 21, 3)
-
-        return outAnglesDF
+        return distanceDF
 
     def retrieve_parameters(self, replica=None):
         """
@@ -66,10 +82,10 @@ class Angles(Analyses):
         Args:
             numReplica: Replica number. Not used for now.
         """
+
         self.parameters["name"] = self.lineEditName.text()
         self.parameters["selection1"] = self.lineEditSelection1.text()
         self.parameters["selection2"] = self.lineEditSelection2.text()
-        self.parameters["selection3"] = self.lineEditSelection3.text()
 
     def loadFromDict(self, dictionnary):
         """
@@ -78,12 +94,12 @@ class Angles(Analyses):
         Args:
             dictionnary (dict): dictionnary with all the parameters.
         """
+
         self.parameters = dictionnary
 
         self.lineEditName.setText(self.parameters["name"])
         self.lineEditSelection1.setText(self.parameters["selection1"])
         self.lineEditSelection2.setText(self.parameters["selection2"])
-        self.lineEditSelection3.setText(self.parameters["selection3"])
 
         self.restore_graphs()
 
@@ -91,13 +107,16 @@ class Angles(Analyses):
         """
         Initialise all PyQt widgets
         """
+
         self.widget = QtWidgets.QWidget()  # Main Widget
         self.widget.setObjectName("widget")
 
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -128,14 +147,6 @@ class Angles(Analyses):
         self.pushButtonShowAtoms2.setText("Show selected atoms")
         self.pushButtonShowAtoms2.setObjectName("pushButtonShowAtoms2")
 
-        self.labelSelection3 = QtWidgets.QLabel(self.widget)
-        self.labelSelection3.setText("Atoms Selection")
-        self.lineEditSelection3 = QtWidgets.QLineEdit(self.widget)
-        self.lineEditSelection3.setObjectName("lineEditSelection3")
-        self.pushButtonShowAtoms3 = QtWidgets.QPushButton(self.widget)
-        self.pushButtonShowAtoms3.setText("Show selected atoms")
-        self.pushButtonShowAtoms3.setObjectName("pushButtonShowAtoms3")
-
         # Now the layout : 4 Horizontals layouts
 
         self.Hlayout0 = QtWidgets.QHBoxLayout()
@@ -158,31 +169,24 @@ class Angles(Analyses):
         self.Hlayout3.addWidget(self.pushButtonShowAtoms2)
         self.Hlayout3.addStretch()
 
-        self.Hlayout4 = QtWidgets.QHBoxLayout()
-        self.Hlayout4.addWidget(self.labelSelection3)
-        self.Hlayout4.addWidget(self.lineEditSelection3)
-        self.Hlayout4.addWidget(self.pushButtonShowAtoms3)
-        self.Hlayout4.addStretch()
-
         self.gridLayout.addLayout(self.Hlayout0, 0, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout1, 1, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout2, 2, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout3, 3, 0, 1, 1)
-        self.gridLayout.addLayout(self.Hlayout4, 4, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">ANGLE</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Compute the angle between three atoms.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">PLEASE SELECT 1 ATOM ONLY PER SELECTION.</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection1</span> : atom selection for first atom </p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection2</span> : atom selection for second atom </p></body></html>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection2</span> : atom selection for third atom </p></body></html>\n"
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">DISTANCE</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Compute the distance between two set of atoms</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection1</span> : atom selection for first atom group</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection2</span> : atom selection for second atom group</p></body></html>\n'
         )

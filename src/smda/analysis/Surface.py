@@ -1,4 +1,10 @@
-from .base import *
+import mdtraj as md
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+import scipy.signal
+
+from .base import Analyses
+
 
 class Surface(Analyses):
     # TODO add radiilist (button, widget with table showing up with "ATOM" and "RADIUS"), then conversion into dictionnary
@@ -28,8 +34,12 @@ class Surface(Analyses):
         self.lineColor = "magenta"
 
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
-        self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
+        self.lineEditSelection.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection)
+        )
+        self.pushButtonShowAtoms.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection)
+        )
 
     def do_calculations(self, traj):
         """
@@ -44,17 +54,22 @@ class Surface(Analyses):
         subtraj = traj.atom_slice(selected_atoms)
 
         try:
-            sasa = md.shrake_rupley(subtraj,
-                                    probe_radius=self.spinBoxProbe.value(),
-                                    n_sphere_points=self.spinBoxPoints.value(),
-                                    mode=self.comboBoxMode.currentText())
-        except:
+            sasa = md.shrake_rupley(
+                subtraj,
+                probe_radius=self.spinBoxProbe.value(),
+                n_sphere_points=self.spinBoxPoints.value(),
+                mode=self.comboBoxMode.currentText(),
+            )
+        except Exception:
             return False
         # TODO : average sasa per atom/residues
         result = sasa.sum(axis=1)  # 1 = frames
-        resultsDF = pd.DataFrame({self.yAxisLabel: result * 10,
-                                  self.xAxisLabel: traj.time / 1000})
-        resultsDF["Average"] = scipy.signal.savgol_filter(resultsDF[self.yAxisLabel], 21, 3)
+        resultsDF = pd.DataFrame(
+            {self.yAxisLabel: result * 10, self.xAxisLabel: traj.time / 1000}
+        )
+        resultsDF["Average"] = scipy.signal.savgol_filter(
+            resultsDF[self.yAxisLabel], 21, 3
+        )
         return resultsDF
 
     def loadFromDict(self, dictionnary):
@@ -98,7 +113,9 @@ class Surface(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -181,20 +198,22 @@ class Surface(Analyses):
         self.gridLayout.addLayout(self.Hlayout3, 3, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout4, 4, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout5, 5, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">Accessible Surface Calculation</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Accessible surface calculation using Shrake and Rupley algorithm.</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for atom group</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Mode</span> : Calcul surface per atoms or per residues ?</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Probe Radius</span> : Size of the probe radius (default value = 1.4A)</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Number of points</span> : Number of points per sphere (each atom is converted in sphere)</p></body></html>\n"
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">Accessible Surface Calculation</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Accessible surface calculation using Shrake and Rupley algorithm.</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for atom group</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Mode</span> : Calcul surface per atoms or per residues ?</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Probe Radius</span> : Size of the probe radius (default value = 1.4A)</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Number of points</span> : Number of points per sphere (each atom is converted in sphere)</p></body></html>\n'
         )

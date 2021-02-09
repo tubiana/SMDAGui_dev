@@ -1,13 +1,12 @@
-from PyQt5.QtWidgets import QLabel
+import PyQt5.QtWidgets as QtWidgets
 
-from .base import *
+from .base import Analyses
 
 
 class Alignement(Analyses):
     """
     Class used to ALIGN a trajectory.
     """
-
 
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
         """
@@ -29,8 +28,12 @@ class Alignement(Analyses):
         # self.fig = None
         # self.ax = None
 
-        self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
-        self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
+        self.lineEditSelection.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection)
+        )
+        self.pushButtonShowAtoms.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection)
+        )
 
     def show_graph(self, parent, replica=None):
         """
@@ -55,7 +58,9 @@ class Alignement(Analyses):
         Returns:
             traj (mdtraj.trajectory):  trajectory object
         """
-        self.mainWindows.statusbar.showMessage("Imagine, Aligning and centering trajectory")
+        self.mainWindows.statusbar.showMessage(
+            "Imagine, Aligning and centering trajectory"
+        )
         # 1 Get parameters
         self.retrieve_parameters()
 
@@ -98,7 +103,9 @@ class Alignement(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -142,16 +149,19 @@ class Alignement(Analyses):
         self.gridLayout.addLayout(self.Hlayout0, 0, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout1, 1, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout2, 2, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">Self Alignement</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Align each frame of the trajectory on a particular frame (default : First one - 0 )</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for RMSD calculation</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Reference Frame</span> : Frame of reference (usually the first one). <span style=\" font-weight:600;\">Start at 0!</span></p>\n"
-            "</body></html>")
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">Self Alignement</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Align each frame of the trajectory on a particular frame (default : First one - 0 )</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for RMSD calculation</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Reference Frame</span> : Frame of reference (usually the first one). <span style=" font-weight:600;">Start at 0!</span></p>\n'
+            "</body></html>"
+        )

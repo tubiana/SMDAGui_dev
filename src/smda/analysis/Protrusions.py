@@ -1,8 +1,13 @@
-from .base import *
+import mdtraj as md
+import numpy as np
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+import scipy.signal
+
+from .base import Analyses
+
 
 class Protrusions(Analyses):
-
-
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
         """
         Initialise the current analysis class.
@@ -29,8 +34,12 @@ class Protrusions(Analyses):
         self.lineColor = "red"
 
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection.textChanged.connect(lambda: self.check_selection(self.lineEditSelection))
-        self.pushButtonShowAtoms.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection))
+        self.lineEditSelection.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection)
+        )
+        self.pushButtonShowAtoms.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection)
+        )
         self.tabGraphName = ["Time series", "H-bond count"]
 
     def generate_graphs(self, resultsDF, replica=0):
@@ -44,11 +53,13 @@ class Protrusions(Analyses):
             replica (int): replica number
         """
         graphs = []
-        ax, fig = self.graph_HBOND(resultsDF,
-                                   self.parameters["name"],
-                                   self.parameters["imgPath"][replica])
+        ax, fig = self.graph_HBOND(
+            resultsDF, self.parameters["name"], self.parameters["imgPath"][replica]
+        )
         graphs.append(self.store_figure(ax=ax, fig=fig))
-        summedGraphPath = self.parameters["imgPath"][replica].split(".png")[0] + "_summed.png"
+        summedGraphPath = (
+            self.parameters["imgPath"][replica].split(".png")[0] + "_summed.png"
+        )
         ax2, fig2 = self.calc_summed_graph(resultsDF, imgPath=summedGraphPath)
         if ax2 and fig2:
             graphs.append(self.store_figure(ax=ax2, fig=fig2))
@@ -64,17 +75,15 @@ class Protrusions(Analyses):
 
         dat = resultsDF.drop("Freq", axis="columns").sum(axis=0)
         time = list(resultsDF.drop("Freq", axis="columns").columns)
-        count = pd.DataFrame({self.yAxisLabel: dat,
-                              self.xAxisLabel: time})
+        count = pd.DataFrame({self.yAxisLabel: dat, self.xAxisLabel: time})
 
         if len(count) > 100:
             count["Average"] = scipy.signal.savgol_filter(count[self.yAxisLabel], 21, 3)
 
         if not count.empty:
-            ax, fig = self.graph_XY(count,
-                                    self.__class__.__name__,
-                                    self.parameters["name"],
-                                    imgPath)
+            ax, fig = self.graph_XY(
+                count, self.__class__.__name__, self.parameters["name"], imgPath
+            )
 
             return (ax, fig)
         else:
@@ -90,54 +99,63 @@ class Protrusions(Analyses):
         Returns:
             resultDF (pandas.DataFrame):  DataFrame with all the results
         """
-        result = pd.DataFrame()
+        # TODO: should be removed ?
+        # result = pd.DataFrame()
 
-        hydrophobic_residue=["MET","CYS","ILE","LEU","TYR","PHE","TRP"]
+        hydrophobic_residue = ["MET", "CYS", "ILE", "LEU", "TYR", "PHE", "TRP"]
         # Select the atoms for the convexhul hull calculation
         selection = self.lineEditSelection.text()
         cutoff = self.spinBoxCutoff.value()
         density = self.spinBoxDensity.value()
 
-        subtraj = traj.atom_slice(traj.top.select(f'{selection} and (name CA or name CB)'))
+        subtraj = traj.atom_slice(
+            traj.top.select(f"{selection} and (name CA or name CB)")
+        )
 
         labelDict = {}
         for atom in subtraj.top.atoms:
-            labelDict[atom.index] = f'{atom.residue.name}-{atom.residue.resSeq}'
+            labelDict[atom.index] = f"{atom.residue.name}-{atom.residue.resSeq}"
 
         resultNumpyArray = np.zeros((len(labelDict), subtraj.n_frames), dtype=int)
 
         import time
+
         start = time.time()
         for frame in range(subtraj.n_frames):
             coords = subtraj.xyz[frame]
 
             from scipy.spatial import ConvexHull
+
             hull = ConvexHull(coords)  # Calculation of the ConvexHull
 
-            vertices = hull.vertices #Vertices correspond to the atoms in the coordinates.
-            neighbor = md.compute_neighborlist(subtraj, cutoff, frame) #calculate the neighbors for each CA/CB for frame i
+            vertices = (
+                hull.vertices
+            )  # Vertices correspond to the atoms in the coordinates.
+            neighbor = md.compute_neighborlist(
+                subtraj, cutoff, frame
+            )  # calculate the neighbors for each CA/CB for frame i
 
             # Keep only the protrusion
-            protrusionIndex = []
+            # TODO: should be removed ?
+            # protrusionIndex = []
             for vertex in vertices:
                 if len(neighbor[vertex] < density):
                     if self.checkBoxHydrophobic.isChecked():
                         if labelDict[vertex][:3] in hydrophobic_residue:
-                            #ADD ONLY CB ATOMS
-                            if (subtraj.top.atom(vertex).name == "CB"):
-                                resultNumpyArray[vertex,frame] = 1
+                            # ADD ONLY CB ATOMS
+                            if subtraj.top.atom(vertex).name == "CB":
+                                resultNumpyArray[vertex, frame] = 1
 
-        resultDF = pd.DataFrame(resultNumpyArray,
-                                index=labelDict.values())
+        resultDF = pd.DataFrame(resultNumpyArray, index=labelDict.values())
 
-        #Remove empty lines
-        resultDF = resultDF.loc[(resultDF!=0).any(1),]
+        # Remove empty lines
+        resultDF = resultDF.loc[
+            (resultDF != 0).any(1),
+        ]
         resultDF["Freq"] = resultDF.sum(axis=1) / subtraj.n_frames
 
-
-
         end = time.time()
-        print(f'convhullCalculation = {end-start}')
+        print(f"convhullCalculation = {end-start}")
         return resultDF
 
     def add_outPath_in_parameters(self, numReplica=None):
@@ -157,13 +175,21 @@ class Protrusions(Analyses):
         if numReplica and numReplica > 1:
             for replica in range(numReplica):
                 print(f"replica --- {replica}")
-                strImgPath = "IMG/replica{}/{}_{}.png".format(replica, self.__class__.__name__, self.parameters["name"])
-                strCsvPath = "CSV/replica{}/{}_{}.csv".format(replica, self.__class__.__name__, self.parameters["name"])
+                strImgPath = "IMG/replica{}/{}_{}.png".format(
+                    replica, self.__class__.__name__, self.parameters["name"]
+                )
+                strCsvPath = "CSV/replica{}/{}_{}.csv".format(
+                    replica, self.__class__.__name__, self.parameters["name"]
+                )
                 self.parameters["imgPath"].append(strImgPath)
                 self.parameters["csvPath"].append(strCsvPath)
         else:
-            strImgPath = "IMG/{}_{}.png".format(self.__class__.__name__, self.parameters["name"])
-            strCsvPath = "CSV/{}_{}.csv".format(self.__class__.__name__, self.parameters["name"])
+            strImgPath = "IMG/{}_{}.png".format(
+                self.__class__.__name__, self.parameters["name"]
+            )
+            strCsvPath = "CSV/{}_{}.csv".format(
+                self.__class__.__name__, self.parameters["name"]
+            )
             self.parameters["imgPath"].append(strImgPath)
             self.parameters["csvPath"].append(strCsvPath)
 
@@ -181,7 +207,6 @@ class Protrusions(Analyses):
         self.parameters["distance cut-off"] = self.spinBoxCutoff.value()
         self.parameters["freq"] = self.spinBoxFreq.value()
         self.parameters["checkBoxHydrophobic"] = self.checkBoxHydrophobic.isChecked()
-
 
         # self.parameters["imgPath"] = ["IMG/{}_{}.png".format(self.__class__.__name__, self.parameters["name"]),
         #                               "IMG/{}-count_{}.png".format(self.__class__.__name__, self.parameters["name"])]
@@ -218,7 +243,9 @@ class Protrusions(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -273,8 +300,6 @@ class Protrusions(Analyses):
         self.checkBoxHydrophobic.setObjectName("checkBoxHydrophobic")
         self.checkBoxHydrophobic.setChecked(True)
 
-
-
         # Now the layout : 4 Horizontals layouts
 
         self.Hlayout0 = QtWidgets.QHBoxLayout()
@@ -310,7 +335,6 @@ class Protrusions(Analyses):
         self.Hlayout6.addWidget(self.checkBoxHydrophobic)
         self.Hlayout6.addStretch()
 
-
         self.gridLayout.addLayout(self.Hlayout0, 0, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout1, 1, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout2, 2, 0, 1, 1)
@@ -318,20 +342,22 @@ class Protrusions(Analyses):
         self.gridLayout.addLayout(self.Hlayout4, 4, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout5, 5, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout6, 6, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">PROTRUSION CALCULATION calculation</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Calculate the protrusions of a convexhull according this paper : [1]E. Fuglebakk and N. Reuter, “A model for hydrophobic protrusions on peripheral membrane proteins,” PLOS Computational Biology, vol. 14, no. 7, p. e1006325, Jul. 2018. </p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for atom group</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Freq</span> : Remove all Hbonds found with frequence bellow this cutoff</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">TODO</span> : TODO</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">TODO</span> : TODO</p></body></html>\n"
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">PROTRUSION CALCULATION calculation</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Calculate the protrusions of a convexhull according this paper : [1]E. Fuglebakk and N. Reuter, “A model for hydrophobic protrusions on peripheral membrane proteins,” PLOS Computational Biology, vol. 14, no. 7, p. e1006325, Jul. 2018. </p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for atom group</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Freq</span> : Remove all Hbonds found with frequence bellow this cutoff</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">TODO</span> : TODO</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">TODO</span> : TODO</p></body></html>\n'
         )

@@ -1,4 +1,11 @@
-from .base import *
+import mdtraj as md
+import numpy as np
+import pandas as pd
+import PyQt5.QtWidgets as QtWidgets
+import scipy.signal
+
+from .base import Analyses
+
 
 class HBonds(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
@@ -17,7 +24,14 @@ class HBonds(Analyses):
         self.widget = None
         self.init_widget()
 
-        self.arguments = ["name", "selection1", "selection2", "freq", "excludeWaters", "sideChainOnly"]
+        self.arguments = [
+            "name",
+            "selection1",
+            "selection2",
+            "freq",
+            "excludeWaters",
+            "sideChainOnly",
+        ]
         self.fig = []
         self.ax = []
 
@@ -26,10 +40,18 @@ class HBonds(Analyses):
         self.lineColor = "red"
 
         self.lineEditName.textChanged.connect(self.on_lineEditName_textChanged)
-        self.lineEditSelection1.textChanged.connect(lambda: self.check_selection(self.lineEditSelection1))
-        self.pushButtonShowAtoms1.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection1))
-        self.lineEditSelection2.textChanged.connect(lambda: self.check_selection(self.lineEditSelection2))
-        self.pushButtonShowAtoms2.clicked.connect(lambda: self.show_DataFrame(self.lineEditSelection2))
+        self.lineEditSelection1.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection1)
+        )
+        self.pushButtonShowAtoms1.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection1)
+        )
+        self.lineEditSelection2.textChanged.connect(
+            lambda: self.check_selection(self.lineEditSelection2)
+        )
+        self.pushButtonShowAtoms2.clicked.connect(
+            lambda: self.show_DataFrame(self.lineEditSelection2)
+        )
         self.tabGraphName = ["Time series", "H-bond count"]
 
     def generate_graphs(self, resultsDF, replica=0):
@@ -44,11 +66,13 @@ class HBonds(Analyses):
         """
         print(f"HBOND {replica}")
         graphs = []
-        ax, fig = self.graph_HBOND(resultsDF,
-                                   self.parameters["name"],
-                                   self.parameters["imgPath"][replica])
+        ax, fig = self.graph_HBOND(
+            resultsDF, self.parameters["name"], self.parameters["imgPath"][replica]
+        )
         graphs.append(self.store_figure(ax=ax, fig=fig))
-        summedGraphPath = self.parameters["imgPath"][replica].split(".png")[0] + "_summed.png"
+        summedGraphPath = (
+            self.parameters["imgPath"][replica].split(".png")[0] + "_summed.png"
+        )
         ax2, fig2 = self.calc_summed_graph(resultsDF, imgPath=summedGraphPath)
         if ax2 and fig2:
             graphs.append(self.store_figure(ax=ax2, fig=fig2))
@@ -63,17 +87,15 @@ class HBonds(Analyses):
         """
         dat = resultsDF.drop("Freq", axis="columns").sum(axis=0)
         time = list(resultsDF.drop("Freq", axis="columns").columns)
-        count = pd.DataFrame({self.yAxisLabel: dat,
-                              self.xAxisLabel: time})
+        count = pd.DataFrame({self.yAxisLabel: dat, self.xAxisLabel: time})
 
         if len(count) > 100:
             count["Average"] = scipy.signal.savgol_filter(count[self.yAxisLabel], 21, 3)
 
         if not count.empty:
-            ax, fig = self.graph_XY(count,
-                                    self.__class__.__name__,
-                                    self.parameters["name"],
-                                    imgPath)
+            ax, fig = self.graph_XY(
+                count, self.__class__.__name__, self.parameters["name"], imgPath
+            )
 
             return (ax, fig)
         else:
@@ -102,15 +124,15 @@ class HBonds(Analyses):
                 query = sel2
             else:
                 query = sel1
-            contact = np.asarray(md.compute_neighbors(traj, 0.4, query, np.concatenate((sel1, sel2))))
+            contact = np.asarray(
+                md.compute_neighbors(traj, 0.4, query, np.concatenate((sel1, sel2)))
+            )
             sel_U_sel2 = np.unique(np.concatenate(contact))
             subtraj = traj.atom_slice(sel_U_sel2)
             # Recalculate the atoms aindex because they will not be the same since the contact was made on a subset
             # of the trajectory
             subtrajAtomSelection1 = subtraj.top.select(self.lineEditSelection1.text())
             subtrajAtomSelection2 = subtraj.top.select(self.lineEditSelection2.text())
-
-
 
         hbondsAllFrames = md.geometry.hbond.wernet_nilsson(subtraj)
 
@@ -122,15 +144,25 @@ class HBonds(Analyses):
                 for hbond in frame:
                     donor = hbond[0]
                     acceptor = hbond[2]
-                    if donor in subtrajAtomSelection1 and acceptor in subtrajAtomSelection2:
+                    if (
+                        donor in subtrajAtomSelection1
+                        and acceptor in subtrajAtomSelection2
+                    ):
                         Hbonds_perframe.append(hbond)
-                    elif acceptor in subtrajAtomSelection1 and donor in subtrajAtomSelection2:
+                    elif (
+                        acceptor in subtrajAtomSelection1
+                        and donor in subtrajAtomSelection2
+                    ):
                         Hbonds_perframe.append(hbond)
                 hbondsAllFramesTemp.append(Hbonds_perframe)
             hbondsAllFrames = np.asarray(hbondsAllFramesTemp)
             hbondsAllFramesTemp.clear()
 
-        getLabel = lambda hbond: '%s -- %s' % (traj.topology.atom(hbond[0]), subtraj.topology.atom(hbond[2]))
+        def getLabel(hbond):
+            return "%s -- %s" % (
+                traj.topology.atom(hbond[0]),
+                subtraj.topology.atom(hbond[2]),
+            )
 
         labelsAllFrames = []
 
@@ -243,7 +275,9 @@ class HBonds(Analyses):
         self.gridLayout = QtWidgets.QGridLayout(self.widget)
         self.gridLayout.setContentsMargins(10, 10, 10, 10)
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.widget.sizePolicy().hasHeightForWidth())
@@ -334,20 +368,22 @@ class HBonds(Analyses):
         self.gridLayout.addLayout(self.Hlayout3, 4, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout4, 5, 0, 1, 1)
         self.gridLayout.addLayout(self.Hlayout5, 6, 0, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout.addItem(spacerItem2)
         # Now fill HTML Description
         self.textBrowserDescription.setHtml(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-            "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+            '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
             "p, li { white-space: pre-wrap; }\n"
-            "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-            "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">Hydrogen Bonds calculation</span></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Compute hydrogens bond within the selected atoms</p>\n"
-            "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Name</span> : Name used for graphics. Please use an <span style=\" font-weight:600;\">unique</span> name.</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">AtomSelection</span> : atom selection for atom group</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Freq</span> : Remove all Hbonds found with frequence bellow this cutoff</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Exclude Waters</span> : Exclude waters molecule in Hbonds analysis</p>\n"
-            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" text-decoration: underline;\">Sidechain Only</span> : Use only residues side chain for Hbonds analysis</p></body></html>\n"
+            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+            '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:16pt; font-weight:600; text-decoration: underline;">Hydrogen Bonds calculation</span></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Compute hydrogens bond within the selected atoms</p>\n'
+            '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Name</span> : Name used for graphics. Please use an <span style=" font-weight:600;">unique</span> name.</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">AtomSelection</span> : atom selection for atom group</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Freq</span> : Remove all Hbonds found with frequence bellow this cutoff</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Exclude Waters</span> : Exclude waters molecule in Hbonds analysis</p>\n'
+            '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" text-decoration: underline;">Sidechain Only</span> : Use only residues side chain for Hbonds analysis</p></body></html>\n'
         )
