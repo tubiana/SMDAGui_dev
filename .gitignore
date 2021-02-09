@@ -2,9 +2,6 @@
 *~
 *.py[cod]
 *.so
-*.cfg
-!../personal/smda/.isort.cfg
-!../../SMDAGui_dev/setup.cfg
 *.orig
 *.log
 *.pot
