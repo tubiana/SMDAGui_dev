@@ -1,34 +1,21 @@
-#NOT WORKING YET
-from setuptools import setup, find_packages
+"""
+    Setup file for smda.
+    Use setup.cfg to configure your project.
 
-MAJOR = 0
-MINOR = 9
-PATCH = 0
-VERSION = "{}.{}.{}".format(MAJOR, MINOR, PATCH)
+    This file was generated with PyScaffold 4.0rc2.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
+from setuptools import setup
 
-with open("smda/version.py", "w") as f:
-    f.write("__version__ = '{}'\n".format(VERSION))
-
-
-setup(
-    name='smda',
-    version=VERSION,
-    url='https://github.com/tubiana/SMDAGui_dev',
-    license='GPL3',
-    author='Thibault Tubiana',
-    author_email='tubiana.thibault@gmail.com',
-    description='SMDA: Simple Molecular Dynamic Analysis GUI',
-    platforms=["Linux", "Solaris", "Mac OS-X", "darwin", "Unix", "win32"],
-    install_requires=['matplotlib',
-                      'numpy',
-                      'pandas',
-                      'scipy >= 0.18',
-                      'numba',
-                      'mdtraj >= 1.9.5',
-                      'PyQt5'],
-
-    entry_points={'console_scripts':['smda=smda.smda:main']},
-
-
-    packages=find_packages(),
-)
+if __name__ == "__main__":
+    try:
+        setup(use_scm_version={"version_scheme": "no-guess-dev"})
+    except:  # noqa
+        print(
+            "\n\nAn error occurred while building the project, "
+            "please ensure you have the most updated version of setuptools, "
+            "setuptools_scm and wheel with:\n"
+            "   pip install -U setuptools setuptools_scm wheel\n\n"
+        )
+        raise
