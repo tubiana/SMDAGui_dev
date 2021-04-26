@@ -1,23 +1,34 @@
 from .base import *
-from numba import jit, prange
+try:
+    from numba import jit, prange
+except:
+    pass
 
-@jit(nopython=True, parallel=False, cache=False, nogil=True)
+#@jit(nopython=True, parallel=False, cache=False, nogil=True)
 def calc_rmsd_2frames(ref, frame):
     """
     THIS FUNCTION IS OUT OF THE CLASS BECAUSE OF NUMBA
     RMSD calculation between a reference and a frame.
     This function is "jitted" for better performances
     """
+    # #Loop seems faster with numba
     dist = np.zeros(len(frame))
-    
-    #dist = (ref - frame)**2 
-    #Loop seems faster with numba
     for atom in range(len(frame)):
         dist[atom] = ((ref[atom][0] - frame[atom][0]) ** 2 +
                       (ref[atom][1] - frame[atom][1]) ** 2 +
                       (ref[atom][2] - frame[atom][2]) ** 2)
 
     return (np.sqrt(dist.mean()))
+
+def calc_rmsd_2frames_noopti(ref, frame):
+    """
+    THIS FUNCTION IS THE NON NUMBA OPTIMIZED OUT OF
+    THE CLASS BECAUSE OF NUMBA RMSD calculation
+    between a reference and a frame.
+    """
+    dist = ((ref - frame)**2).sum(axis=1)
+    return (np.sqrt(dist.mean()))
+
 
 
 class RMSD(Analyses):
@@ -72,8 +83,14 @@ class RMSD(Analyses):
         a = time.time()
 
         rmsd = np.zeros(subtraj.n_frames)
+
+        try:
+            calc_function = jit(nopython=True, parallel=False, cache=False, nogil=True)(calc_rmsd_2frames)
+        except:
+            calc_function = calc_rmsd_2frames_noopti
+
         for i in range(subtraj.n_frames):
-            rmsd[i] = calc_rmsd_2frames(subtraj.xyz[referenceFrame], subtraj.xyz[i])
+            rmsd[i] = calc_function(subtraj.xyz[referenceFrame], subtraj.xyz[i])
 
         b = time.time()
         print(b-a)

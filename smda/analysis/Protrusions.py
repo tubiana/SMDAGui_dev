@@ -98,7 +98,7 @@ class Protrusions(Analyses):
         cutoff = self.spinBoxCutoff.value()
         density = self.spinBoxDensity.value()
 
-        subtraj = traj.atom_slice(traj.top.select(f'{selection} and (name CA or name CB)'))
+        subtraj = traj.atom_slice(traj.top.select(f"{selection} and (name == 'CA' or name == 'CB')"))
 
         labelDict = {}
         for atom in subtraj.top.atoms:
@@ -120,7 +120,7 @@ class Protrusions(Analyses):
             # Keep only the protrusion
             protrusionIndex = []
             for vertex in vertices:
-                if len(neighbor[vertex] < density):
+                if len(neighbor[vertex] <= density):
                     if self.checkBoxHydrophobic.isChecked():
                         if labelDict[vertex][:3] in hydrophobic_residue:
                             #ADD ONLY CB ATOMS
@@ -140,32 +140,32 @@ class Protrusions(Analyses):
         print(f'convhullCalculation = {end-start}')
         return resultDF
 
-    def add_outPath_in_parameters(self, numReplica=None):
-        """
-        Overide add_outPath_in_parameters since for HBonds we have 2 graphics.
-        This is to store imgPath and csvPath inside the parameter dict (used to load/save parameters)
-        Note:
-            No return, everything is saved in self.parameters
-        Args:
-            numReplica (int): replica number.
-        """
-
-        # Reset path in list.
-        self.parameters["imgPath"] = []
-        self.parameters["csvPath"] = []
-
-        if numReplica and numReplica > 1:
-            for replica in range(numReplica):
-                print(f"replica --- {replica}")
-                strImgPath = "IMG/replica{}/{}_{}.png".format(replica, self.__class__.__name__, self.parameters["name"])
-                strCsvPath = "CSV/replica{}/{}_{}.csv".format(replica, self.__class__.__name__, self.parameters["name"])
-                self.parameters["imgPath"].append(strImgPath)
-                self.parameters["csvPath"].append(strCsvPath)
-        else:
-            strImgPath = "IMG/{}_{}.png".format(self.__class__.__name__, self.parameters["name"])
-            strCsvPath = "CSV/{}_{}.csv".format(self.__class__.__name__, self.parameters["name"])
-            self.parameters["imgPath"].append(strImgPath)
-            self.parameters["csvPath"].append(strCsvPath)
+    # def add_outPath_in_parameters(self, numReplica=None):
+    #     """
+    #     Overide add_outPath_in_parameters since for HBonds we have 2 graphics.
+    #     This is to store imgPath and csvPath inside the parameter dict (used to load/save parameters)
+    #     Note:
+    #         No return, everything is saved in self.parameters
+    #     Args:
+    #         numReplica (int): replica number.
+    #     """
+    #
+    #     # Reset path in list.
+    #     self.parameters["imgPath"] = []
+    #     self.parameters["csvPath"] = []
+    #
+    #     if numReplica and numReplica > 1:
+    #         for replica in range(numReplica):
+    #             print(f"replica --- {replica}")
+    #             strImgPath = "IMG/replica{}/{}_{}.png".format(replica, self.__class__.__name__, self.parameters["name"])
+    #             strCsvPath = "CSV/replica{}/{}_{}.csv".format(replica, self.__class__.__name__, self.parameters["name"])
+    #             self.parameters["imgPath"].append(strImgPath)
+    #             self.parameters["csvPath"].append(strCsvPath)
+    #     else:
+    #         strImgPath = "IMG/{}_{}.png".format(self.__class__.__name__, self.parameters["name"])
+    #         strCsvPath = "CSV/{}_{}.csv".format(self.__class__.__name__, self.parameters["name"])
+    #         self.parameters["imgPath"].append(strImgPath)
+    #         self.parameters["csvPath"].append(strCsvPath)
 
     def retrieve_parameters(self, replica=None):
         """

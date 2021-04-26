@@ -57,6 +57,7 @@ class MainWindow(QMainWindow, Ui_Design):
 
 
 
+
 ###########################################################################
 #Test function to remove
 
@@ -415,7 +416,7 @@ class MainWindow(QMainWindow, Ui_Design):
         for i in range(self._numReplica):
             #Define tab name
             if self._numReplica < 2:
-                tabName = "Resuts"
+                tabName = "Results"
             else:
                 tabName = f"Replica {i+1}"
             

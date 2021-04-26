@@ -351,7 +351,7 @@ class Analyses(QtWidgets.QTreeWidgetItem):
         ax.set_yticks(list(range(len(labels))))
         ax.set_yticklabels(labels)
 
-        plt.imshow(values, cmap="gray_r", aspect="auto", interpolation=None)
+        plt.imshow(values, cmap="gray_r", aspect="auto", interpolation='None')
 
         fig.tight_layout()
 
