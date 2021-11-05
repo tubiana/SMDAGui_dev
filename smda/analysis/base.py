@@ -195,11 +195,13 @@ class Analyses(QtWidgets.QTreeWidgetItem):
         resultsDF = self.do_calculations(traj)
 
         #If there is no results (or fails) resultsDF = None. To ignore None object I use try
-        try:
+        # try:
+        if not resultsDF is None:
             if not resultsDF.empty:
-                resultsDF.to_csv(self.parameters["csvPath"][replica], sep=";", index=False)
+                resultsDF.to_csv(self.parameters["csvPath"][replica], sep=";", index=True)
                 self.generate_graphs(resultsDF, replica)
-        except (ValueError,AttributeError):
+        # except (ValueError,AttributeError):
+        else:
             return traj
     
         return traj
@@ -297,6 +299,7 @@ class Analyses(QtWidgets.QTreeWidgetItem):
         plt.close()
 
         CurrentFigAx = self.figures[replica]
+        from matplotlib.figure import Figure
 
         for i in range(len(CurrentFigAx)):
             graphicsViewWidget = QtWidgets.QWidget()
@@ -306,13 +309,22 @@ class Analyses(QtWidgets.QTreeWidgetItem):
 
 
             fig = CurrentFigAx[i][0]
+            # fig=Figure()
+            # CurrentFigAx[i][1].mouse_init()
             fig.subplots_adjust(bottom=0.140)
+            # axes = fig.add_subplot(111, projection='3d')
 
             self.plotWidget = FigureCanvas(fig)
             self.plotWidget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                            QtWidgets.QSizePolicy.Expanding)
-            self.plotWidget.updateGeometry()
+
+
+
+
+
             layout.addWidget(self.plotWidget)
+
+
             # add toolbar
             layout.addWidget(NavigationToolbar(self.plotWidget, graphicsViewWidget))
 
@@ -491,13 +503,13 @@ class Analyses(QtWidgets.QTreeWidgetItem):
 
                 if "name" in self.parameters:
                     strImgPath = "{}/replica{}/IMG/{}_{}.png".format(self.mainWindows.output_folder,replica,self.__class__.__name__, self.parameters["name"])
-                    strCsvPath = "{}/replica{}/CSV/{}_{}.png".format(self.mainWindows.output_folder,replica,self.__class__.__name__, self.parameters["name"])
+                    strCsvPath = "{}/replica{}/CSV/{}_{}.csv".format(self.mainWindows.output_folder,replica,self.__class__.__name__, self.parameters["name"])
                     self.parameters["imgPath"].append(strImgPath)
                     self.parameters["csvPath"].append(strCsvPath)
         else:
             if "name" in self.parameters: #alignment object dosn't generate graphs and doesn't have "name"
                 strImgPath = "{}/IMG/{}_{}.png".format(self.mainWindows.output_folder,self.__class__.__name__, self.parameters["name"])
-                strCsvPath = "{}/CSV/{}_{}.png".format(self.mainWindows.output_folder,self.__class__.__name__, self.parameters["name"])
+                strCsvPath = "{}/CSV/{}_{}.csv".format(self.mainWindows.output_folder,self.__class__.__name__, self.parameters["name"])
                 self.parameters["imgPath"].append(strImgPath)
                 self.parameters["csvPath"].append(strCsvPath)
 

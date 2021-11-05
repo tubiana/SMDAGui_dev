@@ -10,4 +10,6 @@ dependencies:
 - mdtraj >= 1.9.5
 - numba
 - pyqt
-- python=3.7
+- pyqt5
+- python
+- sphinx

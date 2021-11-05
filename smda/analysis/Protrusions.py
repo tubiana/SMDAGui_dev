@@ -1,6 +1,9 @@
 from .base import *
 
 class Protrusions(Analyses):
+    """
+    Protrusion analysis module.
+    """
 
 
     def __init__(self, parent=None, mainWindows=None, numReplica=1):

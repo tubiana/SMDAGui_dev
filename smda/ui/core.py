@@ -64,25 +64,29 @@ class MainWindow(QMainWindow, Ui_Design):
     @pyqtSlot()
     def runTest(self):
 
-        self.listWidgetInputTrajectories.item(0).setText("../test/example.xtc")
-        self.lineEditInputTopologyPath.setText("../test/example.pdb")
+        self.listWidgetInputTrajectories.item(0).setText("../test/2H4G_replica1.xtc")
+        self.lineEditInputTopologyPath.setText("../test/topol_2H4G.pdb")
         self.ONTESTING = True
-        #RMSD
-        item = anlz.RMSD.RMSD().__class__(self.treeWidgetChoosenAnalysis, self) #Duplication of this item
+        #TRRMSF
+        item = anlz.TRRMSF.TRRMSF().__class__(self.treeWidgetChoosenAnalysis, self) #Duplication of this item
         item.lineEditName.setText("ProteinTest")
-        item.lineEditSelection.setText("protein")
-        item.spinBoxRefFrame.setValue(0)
-        item.checkBoxPrecentered.setChecked(False)
-        #DISTANCES
-        item = anlz.Distances.Distances().__class__(self.treeWidgetChoosenAnalysis, self)  # Duplication of this item
-        item.lineEditName.setText("DistanceTest")
-        item.lineEditSelection1.setText("residue 1 to 30")
-        item.lineEditSelection2.setText("residue 31 to 60")
-        #RMSF
-        item = anlz.RMSF.RMSF().__class__(self.treeWidgetChoosenAnalysis, self)  # Duplication of this item
-        item.lineEditName.setText("RMSFTest")
-        item.lineEditSelection.setText("protein")
-        item.checkBoxByResidue.setChecked(True)
+        item.lineEditSelection.setText("backbone")
+        # #RMSD
+        # item = anlz.RMSD.RMSD().__class__(self.treeWidgetChoosenAnalysis, self) #Duplication of this item
+        # item.lineEditName.setText("ProteinTest")
+        # item.lineEditSelection.setText("protein")
+        # item.spinBoxRefFrame.setValue(0)
+        # item.checkBoxPrecentered.setChecked(False)
+        # #DISTANCES
+        # item = anlz.Distances.Distances().__class__(self.treeWidgetChoosenAnalysis, self)  # Duplication of this item
+        # item.lineEditName.setText("DistanceTest")
+        # item.lineEditSelection1.setText("residue 1 to 30")
+        # item.lineEditSelection2.setText("residue 31 to 60")
+        # #RMSF
+        # item = anlz.RMSF.RMSF().__class__(self.treeWidgetChoosenAnalysis, self)  # Duplication of this item
+        # item.lineEditName.setText("RMSFTest")
+        # item.lineEditSelection.setText("protein")
+        # item.checkBoxByResidue.setChecked(True)
         #HBONDS
         #item = anlz.HBonds.HBonds().__class__(self.treeWidgetChoosenAnalysis, self)  # Duplication of this item
         #item.lineEditName.setText("HbondTest")
@@ -359,7 +363,7 @@ class MainWindow(QMainWindow, Ui_Design):
         (file,filetype) = QFileDialog.getOpenFileName(self,
                                     "Open Topology",
                                     filter="Valid Formats ( *.binpos *.hdf5 *.h5 *.pdb.gz *.pdb *.lh5 *.crd *.mdcrd \
-                                     *.inpcrd *.prmtop *.restrt *.rst7 *.gro *.xyz.gz \
+                                     *.inpcrd *.prmtop *.restrt *.rst7 *.gro *.psf *.xyz.gz \
                                      *.xyz *.tng *.xml *.mol2 *.hoomdxml);;")
         self.lineEditInputTopologyPath.setText(file)
 
@@ -526,6 +530,7 @@ class MainWindow(QMainWindow, Ui_Design):
         #2. Add Top menus on treeWidgets
         rmsd = anlz.RMSD.RMSD(fluctuationTreeMenu, self)
         rmsf = anlz.RMSF.RMSF(fluctuationTreeMenu, self)
+        rmsf = anlz.TRRMSF.TRRMSF(fluctuationTreeMenu, self)
         sasa = anlz.Surface.Surface(fluctuationTreeMenu, self)
         distance = anlz.Distances.Distances(distancesTreeMenu, self)
         angle = anlz.Angles.Angles(anglesTreeMenu, self)
@@ -917,7 +922,7 @@ class MainWindow(QMainWindow, Ui_Design):
         #Last verification on trajectory timescale
         if traj.timestep == 0:
             traj.time = np.arange(0, len(traj), 1)
-            traj.timestep = 1
+            #traj.timestep = 1
 
         return traj
 

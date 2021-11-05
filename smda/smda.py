@@ -7,6 +7,7 @@ Created on Mon Feb 25 08:57:43 2019
 """
 import sys
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QTimer
 
 try:
     from .ui.core import MainWindow
@@ -18,7 +19,10 @@ def main():
     app = QApplication(sys.argv)
     mainWindows = MainWindow()
     mainWindows.show()
+
+    # Your code here.
     rc=app.exec()
+
     sys.exit(rc)
 
 if __name__ == "__main__" and __package__ is None:

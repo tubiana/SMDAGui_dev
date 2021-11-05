@@ -17,7 +17,7 @@ from . import RMSD
 from . import RMSF
 from . import SecondaryStructures
 from . import Surface
-
+from . import TRRMSF
 
 
 """
