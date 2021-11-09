@@ -1,4 +1,5 @@
 from .base import *
+import seaborn as sns
 
 class TRRMSF(Analyses):
     def __init__(self, parent=None, mainWindows=None, numReplica=1):
@@ -58,7 +59,7 @@ class TRRMSF(Analyses):
         # rmsfDF["Average"] = scipy.signal.savgol_filter(rmsf[self.yAxisLabel], 2, 3)
         return rmsfDF.set_index(self.xAxisLabel)
 
-    def chunk_traj(self, traj, window):
+    def chunk_traj(self, traj, window, minimum_size=10):
         return ([traj[i:i + window] for i in range(0, len(traj), window)])
 
 
@@ -88,9 +89,12 @@ class TRRMSF(Analyses):
         #TAKE WINDOWS
         window = self.spinBoxWindow.value()
         chunked_traj = self.chunk_traj(subtraj, window)
+        trajsize = [len(x) for x in chunked_traj]
         rmsfDF = pd.concat([self.local_RMSF(t, average_coords) for t in chunked_traj], axis=1)
         labels = list(range(0,len(traj), window))
         rmsfDF.columns=labels
+        if trajsize[-1] == 1: #Remove the last column in case there is only 1 frame.
+            rmsfDF = rmsfDF.iloc[:, :-1]
         return rmsfDF
 
     def generate_graphs(self, resultsDF, replica=0):
@@ -100,28 +104,18 @@ class TRRMSF(Analyses):
         :return:
         """
 
-        from mpl_toolkits.mplot3d import Axes3D
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
 
-        X = []
-        Y = []
-        Z = []
-        nchunk=resultsDF.shape[1]
-        for i in range(nchunk):
-            X.append([i]*len([resultsDF.iloc[:,i]]))
-            Y.append(list(resultsDF.index))
-            Z.append(resultsDF.iloc[:,i].values)
 
-        X = np.array(X)
-        Y = np.array(Y)
-        Z = np.array(Z)
-        minval = Z.min()
-        maxval = Z.max()
+        ax = sns.heatmap(resultsDF.T)
+        lw = 10/resultsDF.T.shape[0]
 
-        # for i in range(len(X)):
-        #     ax.plot(X[i],Y[i],Z[i])
-        ax.plot_surface(X,Y,Z, cmap='coolwarm')
+        for i in range(len(resultsDF) + 1):
+            ax.axhline(i, color='white', lw=lw)
+        ax.set(title="TimeResolved-RMSF")
+        ax.set_ylabel("Frame")
+        ax.set_xlabel("Residue number")
+
 
 
 
@@ -218,7 +212,7 @@ class TRRMSF(Analyses):
         self.checkBoxAverage = QtWidgets.QCheckBox(self.widget)
         self.checkBoxAverage.setText("whole trajectory average ?")
         self.checkBoxAverage.setObjectName("checkBoxAverage")
-        self.checkBoxAverage.setChecked(True)
+        self.checkBoxAverage.setChecked(False)
 
         self.labelWindow = QtWidgets.QLabel(self.widget)
         self.labelWindow.setText("Window (Number of frames)")

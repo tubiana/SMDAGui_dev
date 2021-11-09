@@ -71,6 +71,8 @@ class MainWindow(QMainWindow, Ui_Design):
         item = anlz.TRRMSF.TRRMSF().__class__(self.treeWidgetChoosenAnalysis, self) #Duplication of this item
         item.lineEditName.setText("ProteinTest")
         item.lineEditSelection.setText("backbone")
+        item.spinBoxWindow.setValue(50)
+        item.checkBoxAverage.setChecked(False)
         # #RMSD
         # item = anlz.RMSD.RMSD().__class__(self.treeWidgetChoosenAnalysis, self) #Duplication of this item
         # item.lineEditName.setText("ProteinTest")
