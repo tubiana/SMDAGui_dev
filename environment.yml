@@ -9,7 +9,9 @@ dependencies:
 - scipy >= 0.18
 - mdtraj >= 1.9.5
 - numba
-- pyqt
-- pyqt5
-- python
+- python s= 3.8
 - sphinx
+- seaborn
+- pip
+- pip:
+        - PyQt5
