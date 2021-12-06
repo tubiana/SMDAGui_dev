@@ -9,7 +9,7 @@ dependencies:
 - scipy >= 0.18
 - mdtraj >= 1.9.5
 - numba
-- python s= 3.8
+- python >= 3.8
 - sphinx
 - seaborn
 - pip
