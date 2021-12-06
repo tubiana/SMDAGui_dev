@@ -2,7 +2,8 @@
 Simple Molecular Dynamic Analysis Graphical interface
 
 
-TODO!!!!!
+Documentation --> TODO:
+**NOTE: This is still in developement, do not use yet.**
 
 
 
