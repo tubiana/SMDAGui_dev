@@ -165,6 +165,12 @@ class HBonds(Analyses):
 
         # self.resultsAll = result
         return result
+    
+    def filter_saltbridges(self, dataframe):
+        import re
+        saltbridge_regex = re.compile("^(ARG|LYS)\d+-(NE|NZ|NH1|NH2) -- (GLU|ASP)\d+-(OD1|OD2|OE1|OE2)")
+        saltbrides_indexes = list(filter(saltbridge_regex.match, list(dataframe.index)))
+        return dataframe.loc[saltbrides_indexes,]
 
     # def add_outPath_in_parameters(self, numReplica=None):
     #     """

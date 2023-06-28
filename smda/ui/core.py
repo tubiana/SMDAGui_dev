@@ -180,7 +180,7 @@ class MainWindow(QMainWindow, Ui_Design):
                     self.on_treeWidgetChoosenAnalysis_itemSelectionChanged()
                 self.update()
                 itemLoaded+=1
-                progression = (itemLoaded) / len(allParameters) * 100
+                progression = int((itemLoaded) / len(allParameters) * 100)
                 self.progressBarAnalyses.setValue(progression)
 
             
@@ -836,8 +836,8 @@ class MainWindow(QMainWindow, Ui_Design):
                 traj = item.do_analysis(traj, replica, self._numReplica)
                 #traj = item.do_analysis(traj, replica) #TTA : backup
             self.numberOfAnalysisDone += 1
-            progression = (self.numberOfAnalysisDone)/(self.numberOfAnalysis*self._numReplica) * 100
-            self.progressBarAnalyses.setValue(progression)
+            progression = int((self.numberOfAnalysisDone)/(self.numberOfAnalysis*self._numReplica) * 100)
+            self.progressBarAnalyses.setValue(int(progression))
 
         self.saveTrajectory(traj)
         return traj

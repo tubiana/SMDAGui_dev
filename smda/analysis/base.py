@@ -403,7 +403,7 @@ class Analyses(QtWidgets.QTreeWidgetItem):
 
         fig, ax = plt.subplots()
 
-        ax.set_xlabel("Time (ns)")
+        ax.set_xlabel("Frame")
         ax.set_ylabel("Residue")
         ax.set_title("Secondary Structure Conservation for {}".format(name))
 

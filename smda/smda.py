@@ -16,6 +16,7 @@ except:
 
 
 def main():
+    print("> Please note in development")
     app = QApplication(sys.argv)
     mainWindows = MainWindow()
     mainWindows.show()

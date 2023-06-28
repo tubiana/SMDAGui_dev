@@ -116,6 +116,13 @@ class TRRMSF(Analyses):
         ax.set_ylabel("Frame")
         ax.set_xlabel("Residue number")
 
+        imgPath = self.parameters["imgPath"]
+
+
+        self.parameters["imgPath"][replica]
+
+        plt.savefig(imgPath[replica], dpi=300)
+
 
 
 
